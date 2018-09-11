@@ -85,10 +85,10 @@ public class Talk {
       String selectedOption = args[0];
       String[] options = { "-h", "-s", "-a", "-help" };
       List<String> optionsList = Arrays.asList(options);
-      System.out.println("here");
       if (optionsList.contains(selectedOption)) {
-        System.out.println(selectedOption);
+        System.out.println(selectedOption + " -h");
         if (selectedOption == "-h") {
+          System.out.println("Sdfasdf");
           // TalkClient newTalkClient = new TalkClient();
           try {
             TalkClient.runClient(args[1], args[2]);
@@ -99,29 +99,32 @@ public class Talk {
           }
         } else if (selectedOption == "-s") {
           runServer(args[1]);
-        } else if (args[0] == "-a") {
+        } else if (selectedOption == "-a") {
           // TalkClient newTalkClient = new TalkClient();
           try {
             TalkClient.runClient(args[1], args[2]);
           } catch (Exception e) {
             runServer(args[2]);
           }
-
-        } else {
+          
+        } else if (selectedOption == "-help") {
           System.out.print("Anush Shrestha \n" + "Instruciton to use program: \n"
-              + "Talk –h [hostname | IPaddress] [–p portnumber]\n"
-              + "The program behaves as a client connecting to [hostname | IPaddress] on port portnumber. "
-              + "If a server is not available your program should exit with the message “Client unable to "
-              + "communicate with server”. Note: portnumber in this case refers to the server and not to the "
-              + "client.\n" + "Talk –s [–p portnumber]\n"
-              + "The program behaves as a server listening for connections on port portnumber. If the port is"
-              + "not available for use, your program should exit with the message “Server unable to listen on "
-              + "specified port”.\n" + "Talk –a [hostname|IPaddress] [–p portnumber]\n"
-              + "The program enters ``auto’’ mode. When in auto mode, your program should start as a client "
-              + "attempting to communicate with hostname|IPaddress on port portnumber. If a server is not found,"
-              + " your program should detect this condition and start behaving as a server listening for "
-              + "connections on port portnumber.\n" + "Talk –help\n"
-              + "The program prints your name and instructions on how to use your program.\n");
+          + "Talk –h [hostname | IPaddress] [–p portnumber]\n"
+          + "The program behaves as a client connecting to [hostname | IPaddress] on port portnumber. "
+          + "If a server is not available your program should exit with the message “Client unable to "
+          + "communicate with server”. Note: portnumber in this case refers to the server and not to the "
+          + "client.\n" + "Talk –s [–p portnumber]\n"
+          + "The program behaves as a server listening for connections on port portnumber. If the port is"
+          + "not available for use, your program should exit with the message “Server unable to listen on "
+          + "specified port”.\n" + "Talk –a [hostname|IPaddress] [–p portnumber]\n"
+          + "The program enters ``auto’’ mode. When in auto mode, your program should start as a client "
+          + "attempting to communicate with hostname|IPaddress on port portnumber. If a server is not found,"
+          + " your program should detect this condition and start behaving as a server listening for "
+          + "connections on port portnumber.\n" + "Talk –help\n"
+          + "The program prints your name and instructions on how to use your program.\n");
+        } else {
+          System.out.println("am i here");
+          System.out.println("Invalid Invocation");
         }
       } else {
         System.out.println("Invalid operation mode. Check at Talk -help");
