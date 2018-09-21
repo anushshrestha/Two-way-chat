@@ -11,70 +11,112 @@ public class Talk {
   public static final int DEFAULT_PORT = 1287;
   public static final String DEFAULT_HOSTNAME = "localhost";
 
+  public static void runServer(int portNumber) {
+    // Varibles for client to server
+    int serverPortNumber = portNumber;
+    String messageFromClient = null;
+    Socket clientSocket = null;
+    ServerSocket serverSocket = null;
+
+    // From server to client starts
+    String messageForClient = "";
+    try {
+      serverSocket = new ServerSocket(serverPortNumber);
+      System.out.println("Server listening on port " + serverPortNumber);
+    } catch (IOException e) {
+      System.out.println("Could not listen on port " + serverPortNumber);
+      System.exit(0);
+    }
+    try {
+      clientSocket = serverSocket.accept();
+      System.out.println("Server accepted connection from " + clientSocket.getInetAddress());
+    } catch (IOException e) {
+      System.out.println("Accept failed on port " + serverPortNumber);
+      System.exit(0);
+    }
+    try {
+      // To and fro continuous communication
+      BufferedReader messageFromClientReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+      ServerReaderThread readFromClientThread = new ServerReaderThread(messageFromClientReader);
+      Thread fromClientThread = new Thread(readFromClientThread);
+      fromClientThread.start();
+
+      // From server to client
+      BufferedReader outToClient = new BufferedReader(new InputStreamReader(System.in));
+      PrintWriter writeToClient = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
+
+      try {
+        while (true) {
+          messageForClient = outToClient.readLine();
+          if (messageForClient.equals("STATUS")) {
+            System.out.println(
+                "Server connected to client at " + "IP address:" + clientSocket.getInetAddress().getHostAddress()
+                    + "at Port:" + clientSocket.getPort() + " Server Port: " + clientSocket.getLocalPort());
+          } else {
+            writeToClient.println(messageForClient);
+            writeToClient.flush();
+          }
+        }
+      } catch (IOException ie) {
+      }
+
+      clientSocket.close();
+      serverSocket.close();
+      outToClient.close();
+
+    } catch (IOException e) {
+      // System.out.println(e);
+      System.out.println("Read from client failed. Please Try Later");
+      // e.printStackTrace();
+      System.exit(0);
+    }
+    // From server to client ends
+  }
+
   static class TalkClient {
     private static void runClient(String hostName, int portNumber) throws Exception {
-      // Create socket connection
-      // System.out.println("Starting TalkClient");
-      // The Socket class constructor takes two parameters – a string, the IP address
-      // of the server and an integer,
-      // the port number on the server which the client would like to connect
       String serverName = hostName;
       ServerSocket fromServer = null;
-      // "linux1.ens.utulsa.edu";
       int serverPortNumber = portNumber;
-      String message = null;
+      String messageToServer = null;
+      String messageFromServer = null;
 
-      // Send To server
       try {
-        // Variables from server to client
         Socket socket = new Socket(serverName, serverPortNumber);
-        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-
-        // Variables from client to server
-        BufferedReader inFromServer = null;
-        Socket socketFromServer = null;
-        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-        String messageFromServer = null;
-        while (true) {
-          // From Client to Server Starts
-          message = in.readLine();
-          out.println(message);
-          // From client to Server Ends
-
-          // From Server to client Starts
-
-          fromServer = new ServerSocket(serverPortNumber);
-          try {
-            socketFromServer = fromServer.accept();
-            System.out.println("Client accepted connection from Server" + fromServer.getInetAddress());
-          } catch (IOException e) {
-            System.out.println("Accept from Server failed on port " + serverPortNumber);
-            System.exit(-1);
-          }
-          try {
-            inFromServer = new BufferedReader(new InputStreamReader(socketFromServer.getInputStream()));
-          } catch (IOException e) {
-            System.out.println("Couldn't get an inputStream from the server");
-            System.exit(-1);
-          }
-
-          try {
-            while (true) {
-              if (inFromServer.ready()) {
-                messageFromServer = inFromServer.readLine();
-                System.out.println("[remote]" + messageFromServer);
-              }
-            }
-          } catch (IOException e) {
-            System.out.println("Read from server failed");
-            System.exit(-1);
-          }
-
-          // From Server to client ends
+        if (socket.isConnected()) {
+          System.out.println(" Client is connected to Server ");
         }
+
+        BufferedReader messageToServerReader = new BufferedReader(new InputStreamReader(System.in));
+        BufferedReader messsageFromServerReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        PrintWriter out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+
+        // From server to client
+        ClientReaderThread readFromServerThread = new ClientReaderThread(messsageFromServerReader);
+        Thread fromServerThread = new Thread(readFromServerThread);
+        fromServerThread.start();
+
+        // From Client to Server Starts
+        try {
+          while (true) {
+            messageToServer = messageToServerReader.readLine();
+            if (messageToServer.equals("STATUS")) {
+              System.out.println(
+                  "Client is connected to the server at" + "IP address : " + socket.getInetAddress().getHostAddress()
+                      + " and port " + socket.getPort() + " Client Port Number : " + socket.getLocalPort());
+            } else {
+              out.println(messageToServer);
+              out.flush();
+            }
+          }
+        } catch (IOException e) {
+          // e.printStackTrace();
+        }
+
+        socket.close();
       } catch (UnknownHostException e) {
-        System.out.println("Unknown host:" + serverName);
-        System.exit(1);
+        System.out.println(" Unknown host:" + serverName + " Please try later.");
+        System.exit(0);
       } catch (IOException e) {
         throw e;
         // System.out.println(e);
@@ -82,82 +124,19 @@ public class Talk {
         // System.exit(1);
       }
     }
-  }
 
-  public static void runServer(int portNumber) {
-    System.out.println("Starting TalkServer");
-
-    // Varibles for client to server
-    BufferedReader in = null;
-    int serverPortNumber = portNumber;
-    String message = null;
-    Socket client = null;
-    ServerSocket server = null;
-
-    // Variable for server to client
-    Socket socketToClient = null;
-    String messageToClient = null;
-    BufferedReader outToClient;
-
-    // From client to server starts
-    try {
-      server = new ServerSocket(serverPortNumber);
-      System.out.println("Server listening on port " + serverPortNumber);
-    } catch (IOException e) {
-      System.out.println("Could not listen on port " + serverPortNumber);
-      System.exit(-1);
-    }
-    try {
-      client = server.accept();
-      System.out.println("Server accepted connection from " + client.getInetAddress());
-    } catch (IOException e) {
-      System.out.println("Accept failed on port " + serverPortNumber);
-      System.exit(-1);
-    }
-    try {
-      in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-    } catch (IOException e) {
-      System.out.println("Couldn't get an inputStream from the client");
-      System.exit(-1);
-    }
-
-    try {
-      while (true) {
-        if (in.ready()) {
-          message = in.readLine();
-          System.out.println("[remote]" + message);
-        }
-        // From client to server ends
-
-        // From server to client starts
-
-        // socketToClient = new Socket(client.getInetAddress(), client.getPort());
-        // outToClient = new BufferedReader(new InputStreamReader(System.in));
-        // PrintWriter out = new PrintWriter(socketToClient.getOutputStream(), true);
-        // messageToClient = outToClient.readLine();
-        // out.println(messageToClient);
-      }
-    } catch (IOException e) {
-      System.out.println(e);
-      System.out.println("Read from client failed");
-      System.exit(-1);
-    }
-    // From server to client ends
   }
 
   public static void main(String[] args) {
     if (args.length == 0) {
-      System.out.println("Missing operation mode. Check at Talk -help");
+      System.out.println(" Missing operation mode. Check at Talk -help");
     } else {
       String selectedOption = args[0];
-      // System.out.println("Args " + args.length);
       String[] options = { "-h", "-s", "-a", "-help" };
       List<String> optionsList = Arrays.asList(options);
       if (optionsList.contains(selectedOption)) {
 
         if (selectedOption.equals("-h")) {
-          // System.out.println("Sdfasdf");
-          // TalkClient newTalkClient = new TalkClient();
           String hostName;
           int portNumber;
           if (args.length > 1) {
@@ -170,27 +149,27 @@ public class Talk {
                     try {
                       TalkClient.runClient(hostName, portNumber);
                     } catch (Exception e) {
-                      System.out.println(e);
-                      System.out.println("Client unable to communicate with server");
-                      System.exit(1);
+                      // System.out.println(e);
+                      System.out.println("Client unable to communicate with server. Please try later.");
+                      System.exit(0);
                     }
                   } else {
-                    System.out.println("Invalid Invocation");
+                    System.out.println("Invalid Invocation. Please check Talk -help");
                   }
                 } else {
-                  System.out.println("Invalid Invocation");
+                  System.out.println("Invalid Invocation. Please check Talk -help");
                 }
               } else {
-                System.out.println("Invalid Invocation");
+                System.out.println("Invalid Invocation. Please check Talk -help");
               }
             } else {
               portNumber = DEFAULT_PORT;
               try {
                 TalkClient.runClient(hostName, portNumber);
               } catch (Exception e) {
-                System.out.println(e);
-                System.out.println("Client unable to communicate with server");
-                System.exit(1);
+                // System.out.println(e);
+                System.out.println("Client unable to communicate with server. Please try later.");
+                System.exit(0);
               }
             }
           } else {
@@ -199,9 +178,9 @@ public class Talk {
             try {
               TalkClient.runClient(hostName, portNumber);
             } catch (Exception e) {
-              System.out.println(e);
-              System.out.println("Client unable to communicate with server");
-              System.exit(1);
+              // System.out.println(e);
+              System.out.println("Client unable to communicate with server. Please try later.");
+              System.exit(0);
             }
 
             // int portNumber = (args.length < 3 || args[3] != null) ? DEFAULT_PORT :
@@ -216,13 +195,13 @@ public class Talk {
                   portNumber = Integer.parseInt(args[2]);
                   runServer(portNumber);
                 } else {
-                  System.out.println("Invalid Invocation");
+                  System.out.println("Invalid Invocation. Please check Talk -help");
                 }
               } else {
-                System.out.println("Invalid Invocation");
+                System.out.println("Invalid Invocation. Please check Talk -help");
               }
             } else {
-              System.out.println("Invalid Invocation");
+              System.out.println("Invalid Invocation. Please check Talk -help");
             }
           } else {
             portNumber = DEFAULT_PORT;
@@ -236,30 +215,29 @@ public class Talk {
             if (args.length > 2) {
               if (args[2].equals("-p")) {
                 if (args.length > 3) {
-                  System.out.println(args[0] + args[1] + args[2]);
                   if (args[3] != null) {
                     portNumber = Integer.parseInt(args[3]);
                     try {
                       TalkClient.runClient(hostName, portNumber);
                     } catch (Exception e) {
-                      System.out.println(e);
+                      // System.out.println(e);
                       runServer(portNumber);
                     }
                   } else {
-                    System.out.println("Invalid Invocation");
+                    System.out.println("Invalid Invocation. Please check Talk -help");
                   }
                 } else {
-                  System.out.println("Invalid Invocation");
+                  System.out.println("Invalid Invocation. Please check Talk -help");
                 }
               } else {
-                System.out.println("Invalid Invocation");
+                System.out.println("Invalid Invocation. Please check Talk -help");
               }
             } else {
               portNumber = DEFAULT_PORT;
               try {
                 TalkClient.runClient(hostName, portNumber);
               } catch (Exception e) {
-                System.out.println(e);
+                // System.out.println(e);
                 runServer(portNumber);
               }
             }
@@ -269,12 +247,12 @@ public class Talk {
             try {
               TalkClient.runClient(hostName, portNumber);
             } catch (Exception e) {
-              System.out.println(e);
+              // System.out.println(e);
               runServer(portNumber);
             }
           }
         } else if (selectedOption.equals("-help")) {
-          System.out.print("Anush Shrestha \n" + "Instruciton to use program: \n"
+          System.out.print("Anush Shrestha \n" + "Instruction to use program: \n"
               + "\nTalk -h [hostname | IPaddress] [-p portnumber]\n"
               + "The program behaves as a client connecting to [hostname | IPaddress] on port portnumber. "
               + "If a server is not available your program should exit with the message \"Client unable to "
@@ -289,12 +267,34 @@ public class Talk {
               + "connections on port portnumber.\n" + "\nTalk -help\n"
               + "The program prints your name and instructions on how to use your program.\n");
         } else {
-          System.out.println("Invalid Invocation");
+          System.out.println("Invalid Invocation. Please check Talk -help");
         }
       } else {
-        System.out.println("Invalid operation mode. Check at Talk -help");
+        System.out.println("Invalid operation mode. Please check Talk -help");
       }
 
+    }
+  }
+
+}
+
+class ReaderThread implements Runnable {
+  BufferedReader bufferReader = null;
+  String message = "";
+
+  ReaderThread(BufferedReader fromBufferReader) {
+    this.bufferReader = fromBufferReader;
+  }
+
+  public void run() {
+    try {
+      // For continous to and fro communication
+      while (true) {
+        String message = bufferReader.readLine();
+        System.out.println("[Remote]: " + message);
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
     }
   }
 }
