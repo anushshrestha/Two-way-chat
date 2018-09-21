@@ -1,11 +1,16 @@
-import java.io.*;
-import java.net.*;
-import java.util.Arrays;
 import java.util.List;
-
+import java.net.Socket;
+import java.util.Arrays;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.UnknownHostException;
 /**
  *
- * @author ans7740
+ * @author Anush Shrestha (TU name : ans7740)
  */
 public class Talk {
   public static final int DEFAULT_PORT = 1287;
@@ -149,7 +154,6 @@ public class Talk {
                     try {
                       TalkClient.runClient(hostName, portNumber);
                     } catch (Exception e) {
-                      // System.out.println(e);
                       System.out.println("Client unable to communicate with server. Please try later.");
                       System.exit(0);
                     }
@@ -182,9 +186,6 @@ public class Talk {
               System.out.println("Client unable to communicate with server. Please try later.");
               System.exit(0);
             }
-
-            // int portNumber = (args.length < 3 || args[3] != null) ? DEFAULT_PORT :
-            // Integer.parseInt(args[3]);
           }
         } else if (selectedOption.equals("-s")) {
           int portNumber;
@@ -272,11 +273,9 @@ public class Talk {
       } else {
         System.out.println("Invalid operation mode. Please check Talk -help");
       }
-
     }
   }
 
-}
 
 class ReaderThread implements Runnable {
   BufferedReader bufferReader = null;
