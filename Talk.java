@@ -37,7 +37,7 @@ public class Talk {
     try {
       // To and fro continuous communication
       BufferedReader messageFromClientReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-      ServerReaderThread readFromClientThread = new ServerReaderThread(messageFromClientReader);
+      ReaderThread readFromClientThread = new ReaderThread(messageFromClientReader);
       Thread fromClientThread = new Thread(readFromClientThread);
       fromClientThread.start();
 
@@ -92,7 +92,7 @@ public class Talk {
         PrintWriter out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
 
         // From server to client
-        ClientReaderThread readFromServerThread = new ClientReaderThread(messsageFromServerReader);
+        ReaderThread readFromServerThread = new ReaderThread(messsageFromServerReader);
         Thread fromServerThread = new Thread(readFromServerThread);
         fromServerThread.start();
 
