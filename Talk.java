@@ -8,6 +8,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.UnknownHostException;
+
 /**
  *
  * @author Anush Shrestha (TU name : ans7740)
@@ -29,7 +30,7 @@ public class Talk {
       serverSocket = new ServerSocket(serverPortNumber);
       System.out.println("Server listening on port " + serverPortNumber);
     } catch (IOException e) {
-      System.out.println("Could not listen on port " + serverPortNumber);
+      System.out.println("Server unable to listen on port " + serverPortNumber);
       System.exit(0);
     }
     try {
@@ -89,7 +90,7 @@ public class Talk {
       try {
         Socket socket = new Socket(serverName, serverPortNumber);
         if (socket.isConnected()) {
-          System.out.println(" Client is connected to Server ");
+          System.out.println("Client is connected to Server.");
         }
 
         BufferedReader messageToServerReader = new BufferedReader(new InputStreamReader(System.in));
@@ -107,7 +108,7 @@ public class Talk {
             messageToServer = messageToServerReader.readLine();
             if (messageToServer.equals("STATUS")) {
               System.out.println(
-                  "Client is connected to the server at" + "IP address : " + socket.getInetAddress().getHostAddress()
+                  "Client is connected to the server at " + "IP address : " + socket.getInetAddress().getHostAddress()
                       + " and port " + socket.getPort() + " Client Port Number : " + socket.getLocalPort());
             } else {
               out.println(messageToServer);
@@ -120,7 +121,7 @@ public class Talk {
 
         socket.close();
       } catch (UnknownHostException e) {
-        System.out.println(" Unknown host:" + serverName + " Please try later.");
+        System.out.println("Client unable to communicate with server. Please try later.");
         System.exit(0);
       } catch (IOException e) {
         throw e;
@@ -142,31 +143,56 @@ public class Talk {
       if (optionsList.contains(selectedOption)) {
 
         if (selectedOption.equals("-h")) {
-          String hostName;
-          int portNumber;
-          if (args.length > 1) {
-            hostName = (args[1] != null) ? args[1] : DEFAULT_HOSTNAME;
-            if (args.length > 2) {
-              if (args[2].equals("-p")) {
-                if (args.length > 3) {
-                  if (args[3] != null) {
-                    portNumber = Integer.parseInt(args[3]);
-                    try {
-                      TalkClient.runClient(hostName, portNumber);
-                    } catch (Exception e) {
-                      System.out.println("Client unable to communicate with server. Please try later.");
-                      System.exit(0);
+          String hostName = DEFAULT_HOSTNAME;
+          int portNumber = DEFAULT_PORT;
+          if (args.length <= 4) {
+            if (args.length > 1) {
+              if (args[1] != null) {
+                // -a followed by hostname
+                if (!args[1].equals("-p")) {
+                  hostName = args[1];
+                }
+                // hostName = (args[1] != null) ? args[1] : DEFAULT_HOSTNAME;
+                int locationOfP = (args[1].equals("-p")) ? 1 : 2;
+                if (args.length > 2) {
+                  if (args[locationOfP].equals("-p")) {
+                    if (args.length > ++locationOfP) {
+                      if (args[locationOfP] != null) {
+                        try {
+                          portNumber = Integer.parseInt(args[locationOfP]);
+                          TalkClient.runClient(hostName, portNumber);
+                        } catch (NumberFormatException e) {
+                          System.out.println("Invalid Port number. Please try with correct port number.");
+                          System.exit(0);
+                        } catch (Exception e) {
+                          System.out.println("Client unable to communicate with server. Please try later.");
+                          System.exit(0);
+                        }
+                      } else {
+                        System.out.println("Invalid Invocation. Please check Talk -help");
+                      }
+                    } else {
+                      System.out.println("Invalid Invocation. Please check Talk -help");
                     }
                   } else {
                     System.out.println("Invalid Invocation. Please check Talk -help");
                   }
                 } else {
-                  System.out.println("Invalid Invocation. Please check Talk -help");
+                  portNumber = DEFAULT_PORT;
+                  try {
+                    TalkClient.runClient(hostName, portNumber);
+                  } catch (Exception e) {
+                    // System.out.println(e);
+                    System.out.println("Client unable to communicate with server. Please try later.");
+                    System.exit(0);
+                  }
                 }
               } else {
                 System.out.println("Invalid Invocation. Please check Talk -help");
               }
+
             } else {
+              hostName = DEFAULT_HOSTNAME;
               portNumber = DEFAULT_PORT;
               try {
                 TalkClient.runClient(hostName, portNumber);
@@ -177,53 +203,26 @@ public class Talk {
               }
             }
           } else {
-            hostName = DEFAULT_HOSTNAME;
-            portNumber = DEFAULT_PORT;
-            try {
-              TalkClient.runClient(hostName, portNumber);
-            } catch (Exception e) {
-              // System.out.println(e);
-              System.out.println("Client unable to communicate with server. Please try later.");
-              System.exit(0);
-            }
+            System.out.println("Invalid Invocation. Please check Talk -help");
           }
         } else if (selectedOption.equals("-s")) {
           int portNumber;
-          if (args.length > 1) {
-            if (args[1].equals("-p")) {
-              if (args.length > 2) {
-                if (args[2] != null) {
-                  portNumber = Integer.parseInt(args[2]);
-                  runServer(portNumber);
-                } else {
-                  System.out.println("Invalid Invocation. Please check Talk -help");
-                }
-              } else {
-                System.out.println("Invalid Invocation. Please check Talk -help");
-              }
-            } else {
-              System.out.println("Invalid Invocation. Please check Talk -help");
-            }
-          } else {
-            portNumber = DEFAULT_PORT;
-            runServer(portNumber);
-          }
-        } else if (selectedOption.equals("-a")) {
-          String hostName;
-          int portNumber;
-          if (args.length > 1) {
-            hostName = (args[1] != null) ? args[1] : DEFAULT_HOSTNAME;
-            if (args.length > 2) {
-              if (args[2].equals("-p")) {
-                if (args.length > 3) {
-                  if (args[3] != null) {
-                    portNumber = Integer.parseInt(args[3]);
+          if (args.length <= 3) {
+            if (args.length > 1) {
+              if (args[1].equals("-p")) {
+                // should be 2 because after p only 1 character
+                if (args.length > 2) {
+                  if (args[2] != null) {
                     try {
-                      TalkClient.runClient(hostName, portNumber);
-                    } catch (Exception e) {
-                      // System.out.println(e);
+                      portNumber = Integer.parseInt(args[2]);
                       runServer(portNumber);
+                    } catch (NumberFormatException nfe) {
+                      System.out.println("Invalid Port Number. Please try again");
+                      System.exit(0);
+                    } catch (Exception e) {
+                      System.out.println("Invalid Invocation. Please check Talk -help");
                     }
+
                   } else {
                     System.out.println("Invalid Invocation. Please check Talk -help");
                   }
@@ -235,6 +234,62 @@ public class Talk {
               }
             } else {
               portNumber = DEFAULT_PORT;
+              runServer(portNumber);
+            }
+          } else {
+            System.out.println("Invalid Invocation. Please check Talk -help");
+          }
+        } else if (selectedOption.equals("-a")) {
+          String hostName = DEFAULT_HOSTNAME;
+          int portNumber = DEFAULT_PORT;
+          if (args.length <= 4) {
+            if (args.length > 1) {
+              if (args[1] != null) {
+                // -a followed by hostname
+                if (!args[1].equals("-p")) {
+                  hostName = args[1];
+                }
+                // -a follwed by -p
+                // hostName = (args[1] != null) ? args[1] : DEFAULT_HOSTNAME;
+                int locationOfP = (args[1].equals("-p")) ? 1 : 2;
+                if (args.length > locationOfP) {
+                  if (args[locationOfP].equals("-p")) {
+                    if (args.length > ++locationOfP) {
+                      if (args[locationOfP] != null) {
+                        try {
+                          portNumber = Integer.parseInt(args[locationOfP]);
+                          TalkClient.runClient(hostName, portNumber);
+                        } catch (NumberFormatException e) {
+                          System.out.println("Invalid Port number. Please try later");
+                          System.exit(0);
+                        } catch (Exception e) {
+                          // System.out.println(e);
+                          runServer(portNumber);
+                        }
+                      } else {
+                        System.out.println("Invalid Invocation. Please check Talk -help");
+                      }
+                    } else {
+                      System.out.println("Invalid Invocation. Please check Talk -help");
+                    }
+                  } else {
+                    System.out.println("Invalid Invocation. Please check Talk -help");
+                  }
+                } else {
+                  portNumber = DEFAULT_PORT;
+                  try {
+                    TalkClient.runClient(hostName, portNumber);
+                  } catch (Exception e) {
+                    // System.out.println(e);
+                    runServer(portNumber);
+                  }
+                }
+              } else {
+                System.out.println("Invalid Invocation. Please check Talk -help");
+              }
+            } else {
+              hostName = DEFAULT_HOSTNAME;
+              portNumber = DEFAULT_PORT;
               try {
                 TalkClient.runClient(hostName, portNumber);
               } catch (Exception e) {
@@ -243,14 +298,7 @@ public class Talk {
               }
             }
           } else {
-            hostName = DEFAULT_HOSTNAME;
-            portNumber = DEFAULT_PORT;
-            try {
-              TalkClient.runClient(hostName, portNumber);
-            } catch (Exception e) {
-              // System.out.println(e);
-              runServer(portNumber);
-            }
+            System.out.println("Invalid Invocation. Please check Talk -help");
           }
         } else if (selectedOption.equals("-help")) {
           System.out.print("Anush Shrestha \n" + "Instruction to use program: \n"
@@ -275,7 +323,7 @@ public class Talk {
       }
     }
   }
-
+}
 
 class ReaderThread implements Runnable {
   BufferedReader bufferReader = null;
