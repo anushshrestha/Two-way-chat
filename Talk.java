@@ -281,6 +281,8 @@ public class Talk {
                     TalkClient.runClient(hostName, portNumber);
                   } catch (Exception e) {
                     // System.out.println(e);
+                    System.out.println("Client unable to find server.");
+                    System.out.println("Starting program in server mode.");
                     runServer(portNumber);
                   }
                 }
